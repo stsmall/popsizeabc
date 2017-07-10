@@ -57,7 +57,8 @@ def timewindows(nb_times, Tmax, a):
     """
     times = -np.ones(shape=nb_times, dtype='float')
     for i in range(nb_times):
-        times[i] = (np.exp(np.log(1 + a * Tmax) * i/(nb_times - 1)) - 1)/a
+        times[i] = (np.exp(np.log(1.0 + a * Tmax)
+                            * i/(nb_times - 1.0)) - 1.0)/a
     print("Population size changes at the following times (in generations): {}"
           .format(times))
     return(times)
@@ -84,11 +85,12 @@ def ldstats(nb_times, time, r, L, per_err, Tmax):
         t = (times[i + 1] + times[i])/2
         d = 1/(2 * r * t)
         if d <= L:
-            interval_list.append([d - per_err * d/100, d + per_err * d/100])
-    t = Tmax + times[nb_times - 1] - times[nb_times - 2]
-    d = 10**8/(2 * t)
+            interval_list.append([d - per_err * d/100.0,
+                                  d + per_err * d/100.0])
+    t = Tmax + times[nb_times - 1.0] - times[nb_times - 2.0]
+    d = 10.0**8/(2.0 * t)
     # d = 1/(2*r*t)
-    interval_list.append([d-per_err * d/100, d + per_err * d/100])
+    interval_list.append([d-per_err * d/100.0, d + per_err * d/100.0])
     print("Average LD will be computed for the following distance bins (in bp)"
           ": {}".format(interval_list))
     return(interval_list)
@@ -145,14 +147,24 @@ def obsstats(haps, interval_list, chromlist, infile_vcf, list_ani, popsped,
     geno_list = u[1]
     res_ld_zyg = ss.distrib_zyg_r2(pos_list, geno_list, interval_list)
     # print the result
-    with open("{}_{}_n{}_mac{}_macld{}.stat".format(infile_vcf, pop, haps, mac,
-              mac_ld)) as f:
-        m = np.concatenate((np.array([np.float(nb_snp)/np.float(Lchr)],
-                            dtype='float'), res_afs[0], res_ld_zyg[0]))
-        f.write("{.3e}\n".format(m))
+    np.savetxt("{}_{}_n{}_mac{}_macld{}.stat".format(infile_vcf, pop, haps,
+               mac, mac_ld),
+               np.concatenate((np.array([np.float(nb_snp)/np.float(Lchr)],
+                                        dtype='float'),
+                               res_afs[0], res_ld_zyg[0])), fmt='%.3e')
 
 if __name__ == '__main__':
     # input files
+    nb_times = 21  # number of time windows
+    Tmax = 130000  # the oldest time window will start at Tmax
+    a = 0.06  # window scaling
+    times = timewindows(nb_times, Tmax, a)
+
+    per_err = 5  # the length of each interval, as a per of the target distance
+    r = 1E-8  # recomb rate per generation per bp
+    L = 2000000  # size of each segment, in bp.
+    interval_list = ldstats(nb_times, times, r, L, per_err, Tmax)
+
     chromlist = []
     with open(args.chrlist, 'r') as chrm:
         for line in chrm:
@@ -161,15 +173,6 @@ if __name__ == '__main__':
     infile_vcf = args.vcffile
     pop = args.population  # pop id
     list_ani = IO.read_list(args.individuals)  # list of inds for obs stats
-    # input options
-    nb_times = 21  # number of time windows
-    Tmax = 130000  # the oldest time window will start at Tmax
-    a = 0.06  # window scaling
-    times = timewindows(nb_times, Tmax, a)
-    per_err = 5  # the length of each interval, as a per of the target distance
-    r = 1E-8  # recomb rate per generation per bp
-    L = 2000000  # size of each segment, in bp.
-    interval_list = ldstats(nb_times, times, r, L, per_err, Tmax)
     mac = 6  # minor allele count threshold for AFS statistics computation
     mac_ld = 6  # minor allele count threshold for LD statistics computation
     haps = len(list_ani) * 2  # haploid sample size

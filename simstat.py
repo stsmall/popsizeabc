@@ -14,133 +14,139 @@ below. In practice, it is strongly recommended to excute this script using many
 processors in parallel (with different output names!) and to merge all output
 files at the end.
 """
-import sys
-import time
-import datetime
+
 import numpy as np
 import popgen_abc
 import argparse
+
+parser = argparse.ArgumentParser()
+parser.add_argument('-o', "--outfile", type=str, help='outfile name')
+args = parser.parse_args()
 
 
 def timewindows(nb_times, Tmax, a):
     """The length of time windows increases when time increases at a speed that
     is determined by this coefficient computation of time windows based on the
     above parameters
+
+    Parameters:
+        nb_times: int, number of time windows
+        Tmax: int, the oldest time window will start at Tmax
+        a: float, the length of time windows increases when time increases,
+             at a speed that is determined by this coefficient
+    Returns:
+        times: numpy array
+
     """
     times = -np.ones(shape=nb_times, dtype='float')
     for i in range(nb_times):
-        times[i] = (np.exp(np.log(1 + a * Tmax) * i/(nb_times - 1)) - 1)/a
+        times[i] = (np.exp(np.log(1.0 + a * Tmax)
+                           * i/(nb_times - 1.0)) - 1.0)/a
     print("Population size changes at the following times (in generations): {}"
           .format(times))
     return(times)
 
 
-def ldstats(per_err, r, times):
+def ldstats(nb_times, time, r, L, per_err, Tmax):
     """Creation of the bins of physical distance for which the average LD will
     be computed, based on the time windows defined above.
+
+   Parameters:
+        nb_times: int, number of time windows
+        times: array,
+        r: float,recomb rate per generation per bp
+        L: int, size of each segment, in bp.
+        per_err: int, the length of each interval, as a per of the target
+            distance
+        Tmax: int, the oldest time window will start at Tmax
+
+    Returns:
+        intervals_list: list
+
     """
     interval_list = []
     for i in range(nb_times - 1):
-        t = (times[i + 1]+times[i])/2
+        t = (times[i + 1] + times[i])/2
         d = 1/(2 * r * t)
         if d <= L:
-            interval_list.append([d - per_err * d/100, d + per_err * d/100])
-    t = Tmax + times[nb_times - 1] - times[nb_times - 2]
-    d = 10**8/(2 * t)
+            interval_list.append([d - per_err * d/100.0,
+                                  d + per_err * d/100.0])
+    t = Tmax + times[nb_times - 1.0] - times[nb_times - 2.0]
+    d = 10.0**8/(2.0 * t)
     # d = 1/(2*r*t)
-    interval_list.append([d-per_err * d/100, d + per_err * d/100])
+    interval_list.append([d-per_err * d/100.0, d + per_err * d/100.0])
     print("Average LD will be computed for the following distance bins (in bp)"
           ": {}".format(interval_list))
     return(interval_list)
 
 
-def calcsimstats():
-    """
+def calcsimstats(interval_list, nb_rep, haps2, outfile, nb_seg, nb_seg2, mac,
+                 mac_ld, L):
     """
 
-    # create the matrices where results (parameters and statistics) are stored
-    nb_dist=len(interval_list)
-    results=-np.ones(shape=[nb_rep,nb_dist+n2/2+1],dtype='float') # missing statistic values will be set to 1.
-    									      # this mostly concerns LD statistics, because it is sometimes impossible to find SNP pairs in a given distance bin.
-    print('Total numberb of statistics : '+str(nb_dist+n2/2+1)+'\n')
+    Parameters:
+        interval_list: list
+        nb_rep: int, number of simulated datasets. This must be the same as
+            that used in simul_data.py.
+        haps: int, haploid sample size. This must be the same as that used in
+            simul_data.py.
+        haps2: int, number of haploid genomes used to compute summary
+            statistics. must be less than parameter haps and even.
+        outfile: file. # root of the output files. This must be the same as
+            that used in simul_data.py.
+        nb_seg: int, number of independent segments in each dataset. This must
+            be the same as that used in simul_data.py.
+        nb_seg2: int, number of independent segments used to compute summary
+            statistics. must be lower than nb_seg.
+        mac: int, minor allele count threshold for AFS statistics computation
+        mac_ld: int, minor allele count threshold for LD statistics computation
+        L: int, length of one segment, in bp. This must be the same as that
+            used in simul_data.py.
 
+    """
+    nb_dist = len(interval_list)
+    results = -np.ones(shape=[nb_rep, nb_dist + haps2/2 + 1], dtype='float')
+    # missing statistic values will be set to 1.
+    # most common in LD statistics, because it is sometimes impossible to find\
+    # SNP pairs in a given distance bin.
+    print("Total numberb of statistics:{}".format(nb_dist + haps2/2 + 1))
     # compute summary statistics
-    outfile_name_2_read = outfile_name + "_n" + str(n) + "_s" + str(nb_seg)
-    outfile_name_2_write = outfile_name + "_n" + str(n2) + "_s" + str(nb_seg2) + "_mac" + str(mac) + "_macld" + str(mac_ld)
-    print 'Started the computation'
+    out_name_2_read = "{}_n{}_s{}".format(outfile_name, haps, nb_seg)
+    out_name_2_write = "{}_n{}_s{}_mac{}_macld{}".format(outfile_name,
+                                                         haps2, nb_seg2,
+                                                         mac, mac_ld)
     for i in range(nb_rep):
-        elapsed_time=time.time()-start_time
-        print 'Computing statistics for replicate', i+1,", current time :", time.ctime(),", elapsed time :", datetime.timedelta(seconds=elapsed_time)
-        sys.stdout.flush()
         try:
-            results[i,:]=popgen_abc.comp_stats_one_rep_macld(outfile_name_2_read,i,nb_seg2,L,n2,interval_list,mac=mac,mac_ld=mac_ld)
-        except:
-            print 'Problem with replicate', i+1
+            results[i, :] = popgen_abc.comp_stats_one_rep_macld(
+                   out_name_2_read, i, nb_seg2, L, haps2, interval_list,
+                   mac=mac, mac_ld=mac_ld)
+        except:  # this should really be a specific error
+            raise Exception("Problem with replicate, {}".format(i + 1))
             pass
     # print the result
-    np.savetxt(outfile_name_2_write+'.stat',results[0:nb_rep,:],fmt='%.3e')
-    print "Printed the results"
-
-    # the end
-    elapsed_time=time.time()-start_time
-    print "Finished job, ","current time :", time.ctime(), "elapsed time :", datetime.timedelta(seconds=elapsed_time)
+    np.savetxt("{}.stat".format(out_name_2_write), results[0:nb_rep, :],
+               fmt='%.3e')
 
 
 if __name__ == "__main__":
     # general parameters
-    outfile_name = 'res/example_simu' # root of the output files. This must be the same as that used in simul_data.py.
-    nb_rep = 100 # number of simulated datasets. This must be the same as that used in simul_data.py.
-    nb_seg = 100 # number of independent segments in each dataset. This must be the same as that used in simul_data.py.
-    L = 2000000 # length of one segment, in bp. This must be the same as that used in simul_data.py.
-    haps = 50 # haploid sample size. This must be the same as that used in simul_data.py.
-
-    n2 = 50 # number of haploid genomes used to compute summary statistics. must be lower than haps and even.
-    nb_seg2 = 100 # number of independent segments used to compute summary statistics. must be lower than nb_seg.
-    mac = 10 # minor allele count threshold for AFS and IBS statistics computation
-    mac_ld = 10 # minor allele count threshold for LD statistics computation
-
-
-    if __name__ == '__main__':
-    # input files
-    chromlist = []
-    with open(args.chrlist, 'r') as chrm:
-        for line in chrm:
-            chromlist.append(line.strip())
-    popsped = args.pedfile
-    infile_vcf = args.vcffile
-    pop = args.population  # pop id
-    list_ani = IO.read_list(args.individuals)  # list of inds for obs stats
-    # input options
-    nb_times = 21  # number of time windows
-    Tmax = 130000  # the oldest time window will start at Tmax
+    nb_times = 21
+    Tmax = 130000
     a = 0.06  # window scaling
     times = timewindows(nb_times, Tmax, a)
-    per_err = 5  # the length of each interval, as a per of the target distance
-    r = 10**(-8)  # recomb rate per generation per bp
-    interval_list = ldstats(per_err, r, times)
-    mac = 6  # minor allele count threshold for AFS statistics computation
-    mac_ld = 6  # minor allele count threshold for LD statistics computation
-    L = 2000000  # size of each segment, in bp.
-    haps = len(list_ani) * 2  # haploid sample size
-    obsstats(interval_list, haps, infile_vcf, chromlist, list_ani, popsped,
-             pop, mac, mac_ld, L)
 
+    per_err = 5
+    r = 10**(-8)
+    L = 2000000
+    interval_list = ldstats(nb_times, times, r, L, per_err, Tmax)
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    outfile_name = args.outfile
+    nb_rep = 100
+    nb_seg = 100
+    haps = 50
+    haps2 = 50
+    nb_seg2 = 100
+    mac = 6
+    mac_ld = 6
+    calcsimstats(interval_list, nb_rep, haps2, outfile_name, nb_seg, nb_seg2,
+                 mac, mac_ld, L)
