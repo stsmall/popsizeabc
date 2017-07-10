@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 This script simulates genomic samples, and the corresponding AFS and LD summary
@@ -28,7 +27,7 @@ processors in parallel (with different output names!) and to merge all output
 files at the end.
 
 """
-
+from __future__ import division
 import numpy as np
 import popgen_abc
 import tarfile
@@ -36,7 +35,8 @@ import os
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-o', "--outfile", type=str, help='outfile name')
+parser.add_argument('-o', "--outfile", type=str, required=True,
+                    help='outfile name')
 args = parser.parse_args()
 
 

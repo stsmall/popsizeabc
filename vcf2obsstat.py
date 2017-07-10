@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 This script computes the AFS, LD and IBS summary statistics described in the
@@ -19,7 +18,7 @@ Angus Angus_8 0 0 1 -999
 output: Summary statistics are stored in a file with suffix .stat, which has a
 single column with one statistic per line.
 """
-
+import os
 from gwas import IO
 from gwas import data
 from gwas import summary_stat as ss
@@ -38,6 +37,8 @@ parser.add_argument('-ped', "--pedfile", type=str, required=True,
                     help="path to pedfile")
 parser.add_argument('-chr', "--chrlist", type=str, required=True,
                     help="path to chromfile")
+parser.add_argument('-o', "--out", type=str, required=True,
+                    help="outfile prefix")
 args = parser.parse_args()
 
 
@@ -57,8 +58,8 @@ def timewindows(nb_times, Tmax, a):
     """
     times = -np.ones(shape=nb_times, dtype='float')
     for i in range(nb_times):
-        times[i] = (np.exp(np.log(1.0 + a * Tmax)
-                            * i/(nb_times - 1.0)) - 1.0)/a
+        times[i] = (np.exp(np.log(1 + a * Tmax)
+                            * i/(nb_times - 1)) - 1)/a
     print("Population size changes at the following times (in generations): {}"
           .format(times))
     return(times)
@@ -85,26 +86,26 @@ def ldstats(nb_times, time, r, L, per_err, Tmax):
         t = (times[i + 1] + times[i])/2
         d = 1/(2 * r * t)
         if d <= L:
-            interval_list.append([d - per_err * d/100.0,
-                                  d + per_err * d/100.0])
-    t = Tmax + times[nb_times - 1.0] - times[nb_times - 2.0]
-    d = 10.0**8/(2.0 * t)
+            interval_list.append([d - per_err * d/100,
+                                  d + per_err * d/100])
+    t = Tmax + times[nb_times - 1] - times[nb_times - 2]
+    d = 10**8/(2 * t)
     # d = 1/(2*r*t)
-    interval_list.append([d-per_err * d/100.0, d + per_err * d/100.0])
+    interval_list.append([d-per_err * d/100, d + per_err * d/100])
     print("Average LD will be computed for the following distance bins (in bp)"
           ": {}".format(interval_list))
     return(interval_list)
 
 
-def obsstats(haps, interval_list, chromlist, infile_vcf, list_ani, popsped,
-             pop, mac, mac_ld, L):
+def obsstats(haps, interval_list, chromlist, vcf, list_ani, popsped,
+             pop, mac, mac_ld, L, outfile):
     """program to calc summary stats from vcf
 
     Parameters:
         haps: int, number of haps, dips * 2
         interval_list: list, list of time intervals
         chromlist: list, list of chromosomes; name chrom.vcf.gz
-        infile_vcf: file, vcf file
+        vcf: file, vcf file
         list_ani: list, individuals from the vcf
         popsped: file, ped file
         pop: str, population outfile id
@@ -128,7 +129,7 @@ def obsstats(haps, interval_list, chromlist, infile_vcf, list_ani, popsped,
     for chrom in chromlist:
         # store data and pre-analyse it
         print("Processing chromosome,{}".format(chrom))
-        infile_vcf = "{}.vcf.gz".format(chrom)
+        infile_vcf = "{}/{}.vcf.gz".format(vcf, chrom)
         [mydata, mymap] = IO.parseVcfFile(infile_vcf, includeInd=list_ani)
         pedfile = popsped
         IO.parsePedFile_nogeno(pedfile, mydata)
@@ -141,17 +142,20 @@ def obsstats(haps, interval_list, chromlist, infile_vcf, list_ani, popsped,
         pos_list.append(u[0][0])
         geno_list.append(u[2][0])
     # compute summary statistics
-    res_afs = ss.histo(count_list, haps/2)
+    res_afs = ss.histo(count_list, int(haps/2))
     u = ss.break_chr(pos_list, geno_list, L)
     pos_list = u[0]
     geno_list = u[1]
     res_ld_zyg = ss.distrib_zyg_r2(pos_list, geno_list, interval_list)
     # print the result
-    np.savetxt("{}_{}_n{}_mac{}_macld{}.stat".format(infile_vcf, pop, haps,
-               mac, mac_ld),
-               np.concatenate((np.array([np.float(nb_snp)/np.float(Lchr)],
-                                        dtype='float'),
-                               res_afs[0], res_ld_zyg[0])), fmt='%.3e')
+    directory = "{}/res".format(vcf)
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    fname = "{}/res/{}_{}_n{}_mac{}_macld{}.stat".format(vcf, outfile, pop,
+                                                         haps, mac, mac_ld)
+    fnp = np.array([np.float(nb_snp)/np.float(Lchr)], dtype='float')
+    np.savetxt(fname, np.concatenate((fnp, res_afs, res_ld_zyg[0])),
+               fmt='%.3e')
 
 if __name__ == '__main__':
     # input files
@@ -170,11 +174,11 @@ if __name__ == '__main__':
         for line in chrm:
             chromlist.append(line.strip())
     popsped = args.pedfile
-    infile_vcf = args.vcffile
+    vcf = args.vcffile
     pop = args.population  # pop id
     list_ani = IO.read_list(args.individuals)  # list of inds for obs stats
     mac = 6  # minor allele count threshold for AFS statistics computation
     mac_ld = 6  # minor allele count threshold for LD statistics computation
     haps = len(list_ani) * 2  # haploid sample size
-    obsstats(haps, interval_list, chromlist, infile_vcf, list_ani, popsped,
-             pop, mac, mac_ld, L)
+    obsstats(haps, interval_list, chromlist, vcf, list_ani, popsped,
+             pop, mac, mac_ld, L, args.out)

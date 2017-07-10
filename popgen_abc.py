@@ -1,8 +1,8 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 main modules
 """
+from __future__ import division
 from gwas import summary_stat as ss
 from gwas import hapdata
 import numpy as np

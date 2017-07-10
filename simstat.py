@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
 This script computes the AFS and LD summary statistics described in
@@ -14,13 +13,13 @@ below. In practice, it is strongly recommended to excute this script using many
 processors in parallel (with different output names!) and to merge all output
 files at the end.
 """
-
+from __future__ import division
 import numpy as np
 import popgen_abc
 import argparse
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-o', "--outfile", type=str, help='outfile name')
+parser.add_argument('-o', "--outfile", type=str, required=True, help='outfile name')
 args = parser.parse_args()
 
 
