@@ -2,7 +2,6 @@
 """
 main modules
 """
-from __future__ import division
 from gwas import summary_stat as ss
 from gwas import hapdata
 import numpy as np
@@ -64,12 +63,12 @@ def simul_stats_one_rep_macld(outfile_name, rep, nb_seg, L, n, times, params,
             # updates lists
             if prob_err > 0:
                 mydata.introduce_errors(prob_err)
-            u = hapdata.counts_fast(mydata, 'pop1', mac=mac)
-            count_list.append(u)
-            nb_snp += len(u)
+            u = hapdata.Haplos_and_counts_fast(mydata, 'pop1', mac=mac)
+            count_list.append(u[1])
             u = hapdata.Haplos_and_counts_fast(mydata, 'pop1', mac=mac_ld)
             pos_list.append(u[0])
             hap_list.append(u[2])
+            nb_snp += len(u)
         else:
             print("no segsite in segment, {} of replicate, {}".format(i+1,
                                                                       rep+1))

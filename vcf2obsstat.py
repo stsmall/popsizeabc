@@ -18,6 +18,10 @@ Angus Angus_8 0 0 1 -999
 output: Summary statistics are stored in a file with suffix .stat, which has a
 single column with one statistic per line.
 """
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 import os
 from gwas import IO
 from gwas import data
@@ -39,6 +43,7 @@ parser.add_argument('-chr', "--chrlist", type=str, required=True,
                     help="path to chromfile")
 parser.add_argument('-o', "--out", type=str, required=True,
                     help="outfile prefix")
+parser.add_arguement('-c', "--config", type=str, required=True)
 args = parser.parse_args()
 
 
@@ -158,17 +163,17 @@ def obsstats(haps, interval_list, chromlist, vcf, list_ani, popsped,
                fmt='%.3e')
 
 if __name__ == '__main__':
-    # input files
-    nb_times = 21  # number of time windows
-    Tmax = 130000  # the oldest time window will start at Tmax
-    a = 0.06  # window scaling
+    config = configparser.ConfigParser()
+    config.read(config.args)
+    sh = "simulation"
+    nb_times = config.getint(sh, "nbtimes")
+    Tmax = config.getint(sh, "tmax")
+    a = config.getfloat(sh, "a")
     times = timewindows(nb_times, Tmax, a)
-
-    per_err = 5  # the length of each interval, as a per of the target distance
-    r = 1E-8  # recomb rate per generation per bp
-    L = 2000000  # size of each segment, in bp.
+    per_err = config.getint(sh, "per_err")
+    r = config.getfloat(sh, "recomb")
+    L = config.getint(sh, "seg_size")
     interval_list = ldstats(nb_times, times, r, L, per_err, Tmax)
-
     chromlist = []
     with open(args.chrlist, 'r') as chrm:
         for line in chrm:
@@ -177,8 +182,8 @@ if __name__ == '__main__':
     vcf = args.vcffile
     pop = args.population  # pop id
     list_ani = IO.read_list(args.individuals)  # list of inds for obs stats
-    mac = 6  # minor allele count threshold for AFS statistics computation
-    mac_ld = 6  # minor allele count threshold for LD statistics computation
+    mac = config.getint(sh, "minallelcount_sfs")
+    mac_ld = config.getint(sh, "minallelcount_LD")
     haps = len(list_ani) * 2  # haploid sample size
     obsstats(haps, interval_list, chromlist, vcf, list_ani, popsped,
              pop, mac, mac_ld, L, args.out)

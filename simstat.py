@@ -13,13 +13,19 @@ below. In practice, it is strongly recommended to excute this script using many
 processors in parallel (with different output names!) and to merge all output
 files at the end.
 """
-from __future__ import division
 import numpy as np
 import popgen_abc
 import argparse
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 
 parser = argparse.ArgumentParser()
-parser.add_argument('-o', "--outfile", type=str, required=True, help='outfile name')
+parser.add_argument('-i', "--infile", type=str, required=True,
+                    help='infile name')
+parser.add_argument('-c', "--config", type=str, required=True,
+                    help='config file')
 args = parser.parse_args()
 
 
@@ -79,8 +85,8 @@ def ldstats(nb_times, time, r, L, per_err, Tmax):
     return(interval_list)
 
 
-def calcsimstats(interval_list, nb_rep, haps2, outfile, nb_seg, nb_seg2, mac,
-                 mac_ld, L):
+def calcsimstats(interval_list, nb_rep, haps2, infile, nb_seg, nb_seg2, mac,
+                 mac_ld, L, haps):
     """
 
     Parameters:
@@ -91,7 +97,7 @@ def calcsimstats(interval_list, nb_rep, haps2, outfile, nb_seg, nb_seg2, mac,
             simul_data.py.
         haps2: int, number of haploid genomes used to compute summary
             statistics. must be less than parameter haps and even.
-        outfile: file. # root of the output files. This must be the same as
+        infile: file,  root of the output files. This must be the same as
             that used in simul_data.py.
         nb_seg: int, number of independent segments in each dataset. This must
             be the same as that used in simul_data.py.
@@ -108,10 +114,10 @@ def calcsimstats(interval_list, nb_rep, haps2, outfile, nb_seg, nb_seg2, mac,
     # missing statistic values will be set to 1.
     # most common in LD statistics, because it is sometimes impossible to find\
     # SNP pairs in a given distance bin.
-    print("Total numberb of statistics:{}".format(nb_dist + haps2/2 + 1))
+    print("Total number of statistics:{}".format(nb_dist + haps2/2 + 1))
     # compute summary statistics
-    out_name_2_read = "{}_n{}_s{}".format(outfile_name, haps, nb_seg)
-    out_name_2_write = "{}_n{}_s{}_mac{}_macld{}".format(outfile_name,
+    out_name_2_read = "{}_n{}_s{}".format(infile, haps, nb_seg)
+    out_name_2_write = "{}_n{}_s{}_mac{}_macld{}".format(infile,
                                                          haps2, nb_seg2,
                                                          mac, mac_ld)
     for i in range(nb_rep):
@@ -128,24 +134,24 @@ def calcsimstats(interval_list, nb_rep, haps2, outfile, nb_seg, nb_seg2, mac,
 
 
 if __name__ == "__main__":
-    # general parameters
-    nb_times = 21
-    Tmax = 130000
-    a = 0.06  # window scaling
+    config = configparser.ConfigParser()
+    config.read(config.args)
+    sh = "simulation"
+    nb_times = config.getint(sh, "nbtimes")
+    Tmax = config.getint(sh, "tmax")
+    a = config.getfloat(sh, "a")
     times = timewindows(nb_times, Tmax, a)
-
-    per_err = 5
-    r = 10**(-8)
-    L = 2000000
+    per_err = config.getint(sh, "per_err")
+    r = config.getfloat(sh, "recomb")
+    L = config.getint(sh, "seg_size")
     interval_list = ldstats(nb_times, times, r, L, per_err, Tmax)
-
-    outfile_name = args.outfile
-    nb_rep = 100
-    nb_seg = 100
-    haps = 50
-    haps2 = 50
-    nb_seg2 = 100
-    mac = 6
-    mac_ld = 6
-    calcsimstats(interval_list, nb_rep, haps2, outfile_name, nb_seg, nb_seg2,
-                 mac, mac_ld, L)
+    nb_rep = config.getint(sh, "nb_rep")
+    nb_seg = config.getint(sh, "nb_seg")
+    haps = config.getint(sh, "haps")
+    haps2 = config.getint(sh, "haps2")
+    nb_seg2 = config.getint(sh, "nb_seg2")
+    mac = config.getint(sh, "minallelcount_sfs")
+    mac_ld = config.getint(sh, "minallelcount_LD")
+    infile_name = args.infile
+    calcsimstats(interval_list, nb_rep, haps2, infile_name, nb_seg, nb_seg2,
+                 mac, mac_ld, L, haps)

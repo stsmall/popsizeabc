@@ -27,16 +27,21 @@ processors in parallel (with different output names!) and to merge all output
 files at the end.
 
 """
-from __future__ import division
 import numpy as np
 import popgen_abc
 import tarfile
 import os
 import argparse
+try:
+    import configparser
+except ImportError:
+    import ConfigParser as configparser
 
 parser = argparse.ArgumentParser()
 parser.add_argument('-o', "--outfile", type=str, required=True,
                     help='outfile name')
+parser.add_argument('-c', "--config", type=str, required=True,
+                    help='config file')
 args = parser.parse_args()
 
 
@@ -56,8 +61,8 @@ def timewindows(nb_times, Tmax, a):
     """
     times = -np.ones(shape=nb_times, dtype='float')
     for i in range(nb_times):
-        times[i] = (np.exp(np.log(1.0 + a * Tmax) *
-                           i/(nb_times - 1.0)) - 1.0)/a
+        times[i] = (np.exp(np.log(1 + a * Tmax) *
+                           i/(nb_times - 1)) - 1)/a
     print("Population size changes at the following times (in generations): {}"
           .format(times))
     return(times)
@@ -83,14 +88,14 @@ def ldstats(nb_times, time, r, L, per_err, Tmax):
     interval_list = []
     for i in range(nb_times - 1):
         t = (times[i + 1] + times[i])/2
-        d = 1/(2 * r * t)
+        d = 1/(2*r*t)
         if d <= L:
-            interval_list.append([d - per_err * d/100.0,
-                                  d + per_err * d/100.0])
-    t = Tmax + times[nb_times - 1.0] - times[nb_times - 2.0]
-    d = 10.0**8/(2.0 * t)
+            interval_list.append([d - per_err * d/100,
+                                  d + per_err * d/100])
+    t = Tmax + times[nb_times - 1] - times[nb_times - 2]
+    d = 10.0**8/(2 * t)
     # d = 1/(2*r*t)
-    interval_list.append([d-per_err * d/100.0, d + per_err * d/100.0])
+    interval_list.append([d-per_err * d/100, d + per_err * d/100])
     print("Average LD will be computed for the following distance bins (in bp)"
           ": {}".format(interval_list))
     return(interval_list)
@@ -154,20 +159,24 @@ def simdata(interval_list, nb_rep, nb_times, haps, mmu, r_min, r_max, Nmin,
         params[:, 2 + i] = pop_size
 
     # simulate summary statistics
-    out_name_2 = "{}_n{}_s{}".format(outfile, haps, nb_seg)
+    directory = "./res"
+    if not os.path.exists(directory):
+        os.makedirs(directory)
+    out_name_2 = "./res/{}_n{}_s{}".format(outfile, haps, nb_seg)
     print('Started the simualtions')
     for i in range(nb_rep):
+        print("Simulating replicate, {}".format(i + 1))
         try:
             results[i, :] = popgen_abc.simul_stats_one_rep_macld(
                 out_name_2, i, nb_seg, L, haps, times, params[i, :],
                 interval_list, mac=mac, mac_ld=mac_ld, save_msp=save_msp)
         except:  # this should really be a specific error
-            raise Exception("Problem with replicate, {}".format(i + 1))
-            pass
+            print("Problem with replicate, {}".format(i + 1))
+            continue
 
     # print the results
-    np.savetxt("{}_mac{}_macld{}.stat".format(out_name_2, mac, mac_ld),
-               results[0:nb_rep, :], fmt='%.3e')
+    fname = "{}_mac{}_macld{}.stat".format(out_name_2, mac, mac_ld)
+    np.savetxt(fname, results[0:nb_rep, :], fmt='%.3e')
     np.savetxt("{}.params".format(out_name_2), params[0:nb_rep, :], fmt='%.3e')
     print("Printed the results")
 
@@ -185,29 +194,30 @@ def simdata(interval_list, nb_rep, nb_times, haps, mmu, r_min, r_max, Nmin,
 
 
 if __name__ == "__main__":
-    # general parameters
-    nb_times = 21
-    Tmax = 130000
-    a = 0.06  # window scaling
+
+    config = configparser.ConfigParser()
+    config.read(config.args)
+    sh = "simulation"
+    nb_times = config.getint(sh, "nbtimes")
+    Tmax = config.getint(sh, "tmax")
+    a = config.getfloat(sh, "a")
     times = timewindows(nb_times, Tmax, a)
-    per_err = 5
-    r = 10**(-8)
-    L = 2000000
+    per_err = config.getint(sh, "per_err")
+    r = config.getfloat(sh, "recomb")
+    L = config.getint(sh, "seg_size")
     interval_list = ldstats(nb_times, times, r, L, per_err, Tmax)
     outfile_name = args.outfile
-    nb_rep = 100
-    nb_seg = 100
-    haps = 50
-    haps2 = 50
-    nb_seg2 = 100
-    mac = 1
-    mac_ld = 10
-    save_msp = True
+    nb_rep = config.getint(sh, "nb_rep")
+    nb_seg = config.getint(sh, "nb_seg")
+    haps = config.getint(sh, "haps")
+    mac = config.getint(sh, "minallelcount_sfs")
+    mac_ld = config.getint(sh, "minallelcount_LD")
+    save_msp = config.getbool(sh, "savemsp")
     # prior distributions
-    r_min = 0.1 * 10**(-8)
-    r_max = 1.0 * 10**(-8)
-    mmu = 1.0 * 10**(-8)
-    Nmin = 1
-    Nmax = 5
+    r_min = config.getfloat(sh, "recombmin")
+    r_max = config.getfloat(sh, "recombmax")
+    mmu = config.getfloat(sh, "mmu")
+    Nmin = config.getfloat(sh, "Nemin")
+    Nmax = config.getfloat(sh, "Nemax")
     simdata(interval_list, nb_rep, nb_times, haps, mmu, r_min, r_max, Nmin,
             Nmax, outfile_name, nb_seg, L, times, mac, mac_ld, save_msp)
