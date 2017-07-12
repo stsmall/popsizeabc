@@ -40,7 +40,7 @@ except ImportError:
 parser = argparse.ArgumentParser()
 parser.add_argument('-o', "--outfile", type=str, required=True,
                     help='outfile name')
-parser.add_argument('-c', "--config", type=str, required=True,
+parser.add_argument('-c', "--configfile", type=str, required=True,
                     help='config file')
 args = parser.parse_args()
 
@@ -196,7 +196,7 @@ def simdata(interval_list, nb_rep, nb_times, haps, mmu, r_min, r_max, Nmin,
 if __name__ == "__main__":
 
     config = configparser.ConfigParser()
-    config.read(config.args)
+    config.read(args.configfile)
     sh = "simulation"
     nb_times = config.getint(sh, "nbtimes")
     Tmax = config.getint(sh, "tmax")

@@ -24,7 +24,7 @@ except ImportError:
 parser = argparse.ArgumentParser()
 parser.add_argument('-i', "--infile", type=str, required=True,
                     help='infile name')
-parser.add_argument('-c', "--config", type=str, required=True,
+parser.add_argument('-c', "--configfile", type=str, required=True,
                     help='config file')
 args = parser.parse_args()
 
@@ -135,7 +135,7 @@ def calcsimstats(interval_list, nb_rep, haps2, infile, nb_seg, nb_seg2, mac,
 
 if __name__ == "__main__":
     config = configparser.ConfigParser()
-    config.read(config.args)
+    config.read(args.configfile)
     sh = "simulation"
     nb_times = config.getint(sh, "nbtimes")
     Tmax = config.getint(sh, "tmax")
