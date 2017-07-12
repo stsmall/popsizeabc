@@ -43,7 +43,7 @@ parser.add_argument('-chr', "--chrlist", type=str, required=True,
                     help="path to chromfile")
 parser.add_argument('-o', "--out", type=str, required=True,
                     help="outfile prefix")
-parser.add_arguement('-c', "--config", type=str, required=True)
+parser.add_argument('-c', "--config", type=str, required=True)
 args = parser.parse_args()
 
 
