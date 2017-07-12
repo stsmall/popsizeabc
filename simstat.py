@@ -141,7 +141,7 @@ if __name__ == "__main__":
     Tmax = config.getint(sh, "tmax")
     a = config.getfloat(sh, "a")
     times = timewindows(nb_times, Tmax, a)
-    per_err = config.getint(sh, "per_err")
+    per_err = config.getint(sh, "pererr")
     r = config.getfloat(sh, "recomb")
     L = config.getint(sh, "seg_size")
     interval_list = ldstats(nb_times, times, r, L, per_err, Tmax)

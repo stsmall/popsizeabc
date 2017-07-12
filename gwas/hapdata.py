@@ -237,6 +237,41 @@ def Haplos_and_counts_fast(dataset,pop_name,mac=1,prob_error=0):
     haps=dataset.Data[vpop,:]
     return dataset.snp_pos[sel_snp],counts[sel_snp],haps[:,sel_snp]
 
+def unfolded_counts_fast(dataset,pop_name,mac=1):
+    '''
+    computes unfolded counts, assuming that :
+	- dataset includes one single chromosome
+    	- all snps have complete information
+    does not return lists of arrays but single arrays.
+    '''
+    try:
+	vpop=dataset.populations[pop_name]
+    except KeyError:
+	print 'invalid population required'
+    n=sum(vpop)
+    counts=np.sum(dataset.Data[vpop,],axis=0)
+    sel_snp=(counts>=mac)*(counts<=n-mac)
+    return counts[sel_snp]
+
+def counts_fast(dataset,pop_name,mac=1):
+    '''
+    computes folded counts, assuming that :
+	- dataset includes one single chromosome
+    	- all snps have complete information
+    does not return lists of arrays but single arrays.
+    '''
+    try:
+	vpop=dataset.populations[pop_name]
+    except KeyError:
+	print 'invalid population required'
+    n=sum(vpop)
+    counts=np.sum(dataset.Data[vpop,],axis=0)
+    sel_snp=(counts>=mac)*(counts<=n-mac)
+    u=n-counts
+    w=(counts>u)
+    counts[w]=u[w]
+    return counts[sel_snp]
+
 class SNP():
     def __init__(self,Name,chr=None,pos=None):
         self.name=Name

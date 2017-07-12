@@ -20,12 +20,12 @@ d[ind]=paste(round(ld_distances[ind]),'b',sep="")
 d[-ind]=paste(round(ld_distances[-ind]/1000),'kb',sep="")
 
 var_names1=c("AFS0",paste("AFS_",1:(n/2),sep=""),paste("LD_zyg_",d,sep=""))
-probs=c(0.0001,0.001,0.01,0.1,0.25,0.5,0.75,0.9,0.99,0.999,0.9999)
-nb_prob=length(probs)
+#probs=c(0.0001,0.001,0.01,0.1,0.25,0.5,0.75,0.9,0.99,0.999,0.9999)
+#nb_prob=length(probs)
 m=c(1)
 nb_m=length(m)
-var_names2=paste("IBS",m[1],"_",probs,sep="")
-colnames(stat_all) <- c(var_names1,var_names2)
+#var_names2=paste("IBS",m[1],"_",probs,sep="")
+colnames(stat_all) <- c(var_names1)
 
 # remove stats for allele counts below mac
 if (mac>1){

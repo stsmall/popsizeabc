@@ -4,21 +4,21 @@ source('generations.R')
 source('myfunctions.R')
 
 # loads simulated samples, MAF 20% for both AFS and LD stats
-infile_params="../simu_stat/simu_n50_s100.params"
-infile_stat="../simu_stat2/simu_n50_s100_mac10_macld10.stat"
-n=50 # haploid sample size
-mac=10 # minor allele count
+infile_params="../simu_stat/test_n30_s10.params"
+infile_stat="../simu_stat/test_n30_s10_mac6_macld6.stat"
+n=30 # haploid sample size
+mac=6 # minor allele count
 source("load_simu.R")
 
 # loads observed samples
-infile_obs="../cattle_stat/Holstein_n50_mac10_macld10.stat"
+infile_obs="../cattle_data/res/test_Jersey_n30_mac6_macld6.stat"
 source("load_obs.R")
 
 # choice of summary stats
 nb_afs=n/2-mac+2
 ind_afs=1:nb_afs
 ind_ld=nb_afs+(1:(nb_dist-1)) # the LD statistic corresponding to the shortest distance is removed
-ind_ibs=nb_afs+nb_dist+(1:(nb_m*nb_prob))
+# ind_ibs=nb_afs+nb_dist+(1:(nb_m*nb_prob))
 ind_stat=c(ind_afs,ind_ld) # only AFS and LD statistics
 
 # abc
@@ -59,7 +59,3 @@ for (rep in 1:nb_rep){
 }
 post_params[,-(1:2)]=10**post_params[,-(1:2)]
 write.table(post_params,file='estim_Holstein_MAF20.post_params',quote=F,row.names=F,col.names=F)
-
-
-
-
