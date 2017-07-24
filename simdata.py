@@ -184,11 +184,14 @@ def simdata(interval_list, nb_rep, nb_times, haps, mmu, r_min, r_max, Nmin,
     if save_msp:
         mytar = tarfile.open("{}.msp.tar.bz2".format(out_name_2), 'w:bz2')
         for i in range(nb_rep):
-            for j in range(nb_seg):
-                filename = "{}_rep{}_seg{}.msp".format(out_name_2, i + 1,
-                                                       j + 1)
-                mytar.add(filename)
-                os.remove(filename)
+            try:
+                for j in range(nb_seg):
+                    filename = "{}_rep{}_seg{}.msp".format(out_name_2, i + 1,
+                                                           j + 1)
+                    mytar.add(filename)
+                    os.remove(filename)
+            except OSError:
+                continue
         mytar.close()
         print("Created tar for msp files")
 
