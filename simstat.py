@@ -77,8 +77,8 @@ def ldstats(nb_times, time, r, L, per_err, Tmax):
             interval_list.append([d - per_err * d/100.0,
                                   d + per_err * d/100.0])
     t = Tmax + times[nb_times - 1.0] - times[nb_times - 2.0]
-    d = 10.0**8/(2.0 * t)
-    # d = 1/(2*r*t)
+    # d = 10.0**8/(2.0 * t)
+    d = 1/(2*r*t)
     interval_list.append([d-per_err * d/100.0, d + per_err * d/100.0])
     print("Average LD will be computed for the following distance bins (in bp)"
           ": {}".format(interval_list))
