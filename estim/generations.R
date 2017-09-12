@@ -1,13 +1,13 @@
 # Defines time windows and distance bins for LD statistics, similar to that in simul_data.py
 
 nb_times=21
-Tmax=130000
+Tmax=13000
 generations_numbers=rep(-1,nb_times)
 a=0.06
 for (i in 0:(nb_times-1)){
     generations_numbers[i+1]=(exp(log(1+a*Tmax)*i/(nb_times-1))-1)/a
 }
-gen_time=5
+gen_time=1
 
 generations_centers <- rowMeans(cbind(generations_numbers,c(generations_numbers[-1],Tmax+2*Tmax-2*generations_numbers[nb_times-1])))
 generations_log_centers <- rowMeans(log10(cbind(c(1,generations_numbers[-1]),c(generations_numbers[-1],Tmax+2*Tmax-2*generations_numbers[nb_times-1]))))
