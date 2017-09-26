@@ -166,13 +166,9 @@ def simdata(interval_list, nb_rep, nb_times, haps, mmu, r_min, r_max, Nmin,
     print('Started the simualtions')
     for i in range(nb_rep):
         print("Simulating replicate, {}".format(i + 1))
-        try:
-            results[i, :] = popgen_abc.simul_stats_one_rep_macld(
+        results[i, :] = popgen_abc.simul_stats_one_rep_macld(
                 out_name_2, i, nb_seg, L, haps, times, params[i, :],
                 interval_list, mac=mac, mac_ld=mac_ld, save_msp=save_msp)
-        except:  # this should really be a specific error
-            print("Problem with replicate, {}".format(i + 1))
-            continue
 
     # print the results
     fname = "{}_mac{}_macld{}.stat".format(out_name_2, mac, mac_ld)
@@ -180,18 +176,18 @@ def simdata(interval_list, nb_rep, nb_times, haps, mmu, r_min, r_max, Nmin,
     np.savetxt("{}.params".format(out_name_2), params[0:nb_rep, :], fmt='%.3e')
     print("Printed the results")
 
-    # tar ms files (if they exist)
+#    # tar ms files (if they exist)
     if save_msp:
         mytar = tarfile.open("{}.msp.tar.bz2".format(out_name_2), 'w:bz2')
         for i in range(nb_rep):
-            try:
-                for j in range(nb_seg):
-                    filename = "{}_rep{}_seg{}.msp".format(out_name_2, i + 1,
-                                                           j + 1)
+            for j in range(nb_seg):
+                filename = "{}_rep{}_seg{}.msp".format(out_name_2, i + 1,
+                                                       j + 1)
+                if os.path.isfile(filename):
                     mytar.add(filename)
                     os.remove(filename)
-            except OSError:
-                continue
+                else:
+                    pass
         mytar.close()
         print("Created tar for msp files")
 
