@@ -102,7 +102,7 @@ def ldstats(nb_times, times, r, L, per_err, Tmax):
 
 
 def simdata(interval_list, nb_rep, nb_times, haps, mmu, r_min, r_max, Nmin,
-            Nmax, outfile, nb_seg, L, times, mac, mac_ld, save_msp):
+            Nmax, outfile, nb_seg, L, times, mac, mac_ld, writedir, save_msp):
     """Simulates data under model of popsizeabc
 
     Parameters:
@@ -159,10 +159,10 @@ def simdata(interval_list, nb_rep, nb_times, haps, mmu, r_min, r_max, Nmin,
         params[:, 2 + i] = pop_size
 
     # simulate summary statistics
-    directory = "./res"
+    directory = "{}/res".format(writedir)
     if not os.path.exists(directory):
         os.makedirs(directory)
-    out_name_2 = "./res/{}_n{}_s{}".format(outfile, haps, nb_seg)
+    out_name_2 = "{}/res/{}_n{}_s{}".format(writedir, outfile, haps, nb_seg)
     print('Started the simualtions')
     for i in range(nb_rep):
         print("Simulating replicate, {}".format(i + 1))
@@ -218,5 +218,6 @@ if __name__ == "__main__":
     mmu = config.getfloat(sh, "mmu")
     Nmin = config.getfloat(sh, "Nemin")
     Nmax = config.getfloat(sh, "Nemax")
+    wrdir = config.getstr(sh, "writedirectory")
     simdata(interval_list, nb_rep, nb_times, haps, mmu, r_min, r_max, Nmin,
-            Nmax, outfile_name, nb_seg, L, times, mac, mac_ld, save_msp)
+            Nmax, outfile_name, nb_seg, L, times, mac, mac_ld, wrdir, save_msp)
