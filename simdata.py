@@ -218,6 +218,6 @@ if __name__ == "__main__":
     mmu = config.getfloat(sh, "mmu")
     Nmin = config.getfloat(sh, "Nemin")
     Nmax = config.getfloat(sh, "Nemax")
-    wrdir = config.getstr(sh, "writedirectory")
+    wrdir = config.get(sh, "writedirectory")
     simdata(interval_list, nb_rep, nb_times, haps, mmu, r_min, r_max, Nmin,
             Nmax, outfile_name, nb_seg, L, times, mac, mac_ld, wrdir, save_msp)
