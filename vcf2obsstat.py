@@ -162,6 +162,7 @@ def obsstats(haps, interval_list, chromlist, vcf, list_ani, popsped,
     np.savetxt(fname, np.concatenate((fnp, res_afs, res_ld_zyg[0])),
                fmt='%.3e')
 
+
 if __name__ == '__main__':
     config = configparser.ConfigParser()
     config.read(args.configfile)
